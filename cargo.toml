@@ -8,6 +8,7 @@ edition = "2021" # this needs to be 2021, or you need to set "resolver=2"
 [dependencies]
 bevy = "0.8.1" # make sure this is the latest version
 
+
 [[example]]
 name = "hello"
 path = "src/hello.rs"
@@ -16,3 +17,13 @@ path = "src/hello.rs"
 name = "Hello"
 description = "Hello World"
 category = "Test"
+
+
+[[example]]
+name = "3d_cube"
+path = "src/3d_cube.rs"
+
+[package.metadata.example.3d_cube]
+name = "3d Cube"
+description = "A little 3d cube"
+category = "3d Rendering"
