@@ -1,0 +1,18 @@
+[package]
+name = "bevy_playground"
+version = "0.1.0" 
+edition = "2021" # this needs to be 2021, or you need to set "resolver=2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = "0.8.1" # make sure this is the latest version
+
+[[example]]
+name = "hello"
+path = "src/hello.rs"
+
+[package.metadata.example.hello]
+name = "Hello"
+description = "Hello World"
+category = "Test"
