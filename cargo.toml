@@ -7,7 +7,7 @@ edition = "2021" # this needs to be 2021, or you need to set "resolver=2"
 
 [dependencies]
 bevy = "0.8.1" # make sure this is the latest version
-
+rand = "0.8"
 
 [[example]]
 name = "hello"
@@ -26,4 +26,14 @@ path = "src/3d_cube.rs"
 [package.metadata.example.3d_cube]
 name = "3d Cube"
 description = "A little 3d cube"
+category = "3d Rendering"
+
+
+[[example]]
+name = "3d_cube_glsl"
+path = "src/3d_cube_glsl.rs"
+
+[package.metadata.example.3d_cube_glsl]
+name = "3d Cube with GLSL material"
+description = "A little 3d cube with custom shader in GLSL."
 category = "3d Rendering"
