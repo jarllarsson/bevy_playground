@@ -35,7 +35,7 @@ where
 fn main() {
     // Request the output directory
     let out = env::var("PROFILE").unwrap();
-    let out = PathBuf::from(format!("target/{}/{}", out, COPY_DIR));
+    let out = PathBuf::from(format!("target/{}/examples/{}", out, COPY_DIR));
 
     // If it is already in the output directory, delete it and start over
     if out.exists() {
