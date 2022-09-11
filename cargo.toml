@@ -37,3 +37,13 @@ path = "src/3d_cube_glsl.rs"
 name = "3d Cube with GLSL material"
 description = "A little 3d cube with custom shader in GLSL."
 category = "3d Rendering"
+
+
+[[example]]
+name = "compute_wgsl"
+path = "src/compute_wgsl.rs"
+
+[package.metadata.example.compute_wgsl]
+name = "Compute shader WGSL"
+description = "Barebones example of WGSL compute shader in bevy."
+category = "Compute"

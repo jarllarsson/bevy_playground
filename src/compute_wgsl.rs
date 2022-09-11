@@ -1,0 +1,108 @@
+// Very simple first test of a compute shader that calculates a colour
+// Based on compute shader examples for bevy
+
+use bevy::{
+    prelude::*,
+    render::{
+        extract_resource::{ExtractResource, ExtractResourcePlugin},
+        render_asset::RenderAssets,
+        render_graph::{self, RenderGraph},
+        render_resource::*,
+        renderer::{RenderContext, RenderDevice},
+        RenderApp, RenderStage,
+    },
+};
+// Moo. "clone on write", ie keep a ref until change is needed, then clone (https://doc.rust-lang.org/std/borrow/enum.Cow.html)
+use std::borrow::Cow;
+
+// Compute shader dimensions
+
+// Total threads X*Y
+const SIZE: (u32, u32) = (640, 480);
+// Threads per group X*X
+const WORKGROUP_SIZE: u32 = 8;
+
+// Types
+
+// Custom struct for tracking the render target
+// Derives clone so its internals are deep copied,
+// Deref to get the Image from handle (struct must be single-item for this!)
+// and ExtractResource in order to be able to extract the image from bevy's main/game "world" to its render "world"
+#[derive(Clone, Deref, ExtractResource)]
+struct MyComputeShaderRenderTarget(Handle<Image>);
+
+// Setup boilerplate
+// Program entry point and resource setup
+
+fn main() {
+    App::new()
+    .insert_resource(ClearColor(Color::BLACK)) // Our global clear color
+    .add_plugins(DefaultPlugins)
+    .add_plugin(MyComputeShaderPlugin)
+    .add_startup_system(setup)
+    .run();
+}
+
+fn setup(
+    mut commands: Commands, 
+    mut images: ResMut<Assets<Image>>
+) {
+    // Create main presentation texture and compute render target resource...
+    let mut image = Image::new_fill(
+        Extent3d { width: SIZE.0, height: SIZE.1, depth_or_array_layers: 1, },
+        TextureDimension::D2,
+        &[0, 0, 0, 255],
+        TextureFormat::Rgba8Unorm,
+    );
+    image.texture_descriptor.usage = 
+        TextureUsages::COPY_DST | TextureUsages::STORAGE_BINDING | TextureUsages::TEXTURE_BINDING;
+    // ...and add it to our image asset server
+    let image = images.add(image);
+    
+    // Setup the image to be rendered as a sprite to screen
+    commands.spawn_bundle(SpriteBundle {
+        sprite: Sprite {
+            custom_size: Some(Vec2::new(SIZE.0 as f32, SIZE.1 as f32)),
+            ..default()
+        },
+        texture: image.clone(),
+        ..default()
+    });
+
+    // Add image handle as a resource (of our type) to track
+    commands.insert_resource(MyComputeShaderRenderTarget(image));
+
+    // 2d camera for just displaying the texture
+    commands.spawn_bundle(Camera2dBundle::default());
+}
+
+// Compute shader plugin
+// Here is where we encapsulate all our compute shader stuff
+
+pub struct MyComputeShaderPlugin;
+
+impl Plugin for MyComputeShaderPlugin {
+    // Plugin setup on app startup
+    fn build(&self, app: &mut App) {
+        // Extract the render target on which the compute shader needs access to.
+        // From main world to render world.
+        app.add_plugin(ExtractResourcePlugin::<MyComputeShaderRenderTarget>::default());
+
+        // Create our custom render pipeline and a bind group stage
+        // Pipeline describes stages (shaders) of a custom graphics pipeline.
+        // Bind groups binds resources to the shaders.
+        let render_app = app.sub_app_mut(RenderApp); // fetch sub app "RenderApp"
+        render_app
+            .init_resource::<MyComputeShaderPipeline>()
+            .add_system_to_stage(RenderStage::Queue, queue_bind_group);
+
+        // Create render graph node for our shader.
+        // It defines the dependencies our shader and its resources has to others, and schedules it.
+        let mut render_graph = render_app.world.resource_mut::<RenderGraph>();
+        const my_compute_node_name: &str = "my_compute";
+        // Make the node
+        render_graph.add_node(my_compute_node_name, MyComputeNode::default());
+        // Schedule node to run before the camera node, check for OK with unwrap (panics if not)
+        render_graph.add_node_edge(my_compute_node_name, bevy::render::main_graph::node::CAMERA_DRIVER).unwrap();
+    }
+}
