@@ -31,6 +31,10 @@ const WORKGROUP_SIZE: u32 = 8;
 #[derive(Clone, Deref, ExtractResource)]
 struct MyComputeShaderRenderTarget(Handle<Image>);
 
+// Custom struct containing bind group of resources for our shader.
+struct  MyComputeShaderRenderTargetBindGroup(BindGroup);
+
+
 // Setup boilerplate
 // Program entry point and resource setup
 
@@ -106,3 +110,27 @@ impl Plugin for MyComputeShaderPlugin {
         render_graph.add_node_edge(my_compute_node_name, bevy::render::main_graph::node::CAMERA_DRIVER).unwrap();
     }
 }
+
+// Our bind group enqueueing function/system that is added to the Bevy "Queue" render stage in the plugin setup.
+fn queue_bind_group(
+    mut commands: Commands,
+    pipeline: Res<MyComputeShaderPipeline>,
+    gpu_images: Res<RenderAssets<Image>>,
+    render_target: Res<MyComputeShaderRenderTarget>,
+    device: Res<RenderDevice>,
+) {
+    // Fetch gpu view of our render target.
+    // We can use * on render_target to get the handle to borrow as MyComputeShaderRenderTarget derives Deref (otherwise use .0).
+    let view = &gpu_images[&*render_target];
+    // Bind the view to a new bind group (I assume if we have more resources we add them to the same group as make sense based on lifetimes)
+    let bind_group = device.create_bind_group(&BindGroupDescriptor {
+        label: Some("MyBindGroup"),
+        layout: &pipeline.texture_bind_group_layout,
+        entries: &[BindGroupEntry {
+            binding: 0,
+            resource: BindingResource::TextureView(&view.texture_view),
+        }],
+    });
+    commands.insert_resource(MyComputeShaderRenderTargetBindGroup(bind_group))
+}
+
