@@ -112,6 +112,7 @@ impl Plugin for MyComputeShaderPlugin {
 }
 
 // Our bind group enqueueing function/system that is added to the Bevy "Queue" render stage in the plugin setup.
+// Queues the bind group that exist in the pipeline
 fn queue_bind_group(
     mut commands: Commands,
     pipeline: Res<MyComputeShaderPipeline>,
@@ -124,7 +125,7 @@ fn queue_bind_group(
     let view = &gpu_images[&*render_target];
     // Bind the view to a new bind group (I assume if we have more resources we add them to the same group as make sense based on lifetimes)
     let bind_group = device.create_bind_group(&BindGroupDescriptor {
-        label: Some("MyBindGroup"),
+        label: Some("RenderTextureBindGroup"),
         layout: &pipeline.texture_bind_group_layout,
         entries: &[BindGroupEntry {
             binding: 0,
@@ -134,3 +135,38 @@ fn queue_bind_group(
     commands.insert_resource(MyComputeShaderRenderTargetBindGroup(bind_group))
 }
 
+// Custom struct defining the pipeline, contains references to the bind groups that binds the resources needed
+// and the pipelines for initializing and updating.
+pub struct MyComputeShaderPipeline {
+    texture_bind_group_layout: BindGroupLayout,
+    init_pipeline: CachedComputePipelineId,
+    update_pipeline: CachedComputePipelineId,
+}
+
+// implement the FromWorld trait on our pipeline, which allows it to
+// initialize from a given world context when created as a resource to the RenderApp
+impl FromWorld for MyComputeShaderPipeline {
+    // Override the from_world function to do setups when given world context
+    fn from_world(world: &mut World) -> Self {
+        // Setup members of struct
+        // Define the layout of the bind group, ie. the members to bind to the shader.
+        // This layout is referenced when queuing the bind group to the shader.
+        let texture_bind_group_layout =
+            world
+                .resource::<RenderDevice>()
+                .create_bind_group_layout(&BindGroupLayoutDescriptor {
+                    label: Some("RenderTextureBindGroup_Layout"),
+                    entries: &[BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::StorageTexture {
+                            access: StorageTextureAccess::ReadWrite,
+                            format: TextureFormat::Rgba8Unorm,
+                            view_dimension: TextureViewDimension::D2,
+                        },
+                        count: None,
+                    }],
+                });
+        let shader = 
+    }
+}
