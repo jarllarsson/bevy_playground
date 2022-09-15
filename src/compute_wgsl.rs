@@ -35,8 +35,11 @@ struct MyComputeShaderRenderTarget(Handle<Image>);
 struct  MyComputeShaderRenderTargetBindGroup(BindGroup);
 
 
+
+// -------------------------------------------------------------
 // Setup boilerplate
 // Program entry point and resource setup
+// -------------------------------------------------------------
 
 fn main() {
     App::new()
@@ -80,8 +83,25 @@ fn setup(
     commands.spawn_bundle(Camera2dBundle::default());
 }
 
+// ----------------------------------------------------------------------------
 // Compute shader plugin
-// Here is where we encapsulate all our compute shader stuff
+// Here is where we encapsulate all our compute shader stuff.
+// It instantiates our pipeline object and adds our render
+// node to the graph.
+//
+//               [Resources]          
+//                    |
+//  [Shader]  [Shader bindings]
+//     |              |
+//     └──────────────└─[Pipeline(s)]
+//                           |
+//                           └─[Pipeline Resource] --> [Render Node]
+//                                                           |
+//                                                           └─[Render Graph]
+//
+//
+//  Draw Render Graph -> Draw Render Node -> Draw Pipeline -> Draw Shader
+// ----------------------------------------------------------------------------
 
 pub struct MyComputeShaderPlugin;
 
@@ -103,13 +123,18 @@ impl Plugin for MyComputeShaderPlugin {
         // Create render graph node for our shader.
         // It defines the dependencies our shader and its resources has to others, and schedules it.
         let mut render_graph = render_app.world.resource_mut::<RenderGraph>();
-        const my_compute_node_name: &str = "my_compute";
+        const my_compute_node_name: &str = "my_compute_node";
         // Make the node
-        render_graph.add_node(my_compute_node_name, MyComputeNode::default());
+        render_graph.add_node(my_compute_node_name, MyComputeShaderNode::default());
         // Schedule node to run before the camera node, check for OK with unwrap (panics if not)
         render_graph.add_node_edge(my_compute_node_name, bevy::render::main_graph::node::CAMERA_DRIVER).unwrap();
     }
 }
+
+// -------------------------------------------------------------
+// Bind group queueing
+// Bindings for shader resources.
+// -------------------------------------------------------------
 
 // Our bind group enqueueing function/system that is added to the Bevy "Queue" render stage in the plugin setup.
 // Queues the bind group that exist in the pipeline
@@ -125,7 +150,7 @@ fn queue_bind_group(
     let view = &gpu_images[&*render_target];
     // Bind the view to a new bind group (I assume if we have more resources we add them to the same group as make sense based on lifetimes)
     let bind_group = device.create_bind_group(&BindGroupDescriptor {
-        label: Some("RenderTextureBindGroup"),
+        label: Some("my_rendertexture_bindgroup"),
         layout: &pipeline.texture_bind_group_layout,
         entries: &[BindGroupEntry {
             binding: 0,
@@ -135,18 +160,24 @@ fn queue_bind_group(
     commands.insert_resource(MyComputeShaderRenderTargetBindGroup(bind_group))
 }
 
+// -------------------------------------------------------------
+// Pipeline object
+// Contains information on what shaders to run and their bindings.
+// -------------------------------------------------------------
+
 // Custom struct defining the pipeline, contains references to the bind groups that binds the resources needed
 // and the pipelines for initializing and updating.
 pub struct MyComputeShaderPipeline {
     texture_bind_group_layout: BindGroupLayout,
-    init_pipeline: CachedComputePipelineId,
-    update_pipeline: CachedComputePipelineId,
+    init_pipeline_id: CachedComputePipelineId,
+    update_pipeline_id: CachedComputePipelineId,
 }
 
 // implement the FromWorld trait on our pipeline, which allows it to
 // initialize from a given world context when created as a resource to the RenderApp
 impl FromWorld for MyComputeShaderPipeline {
     // Override the from_world function to do setups when given world context
+    // Returns an instance of self: an initialized MyComputeShaderPipeline.
     fn from_world(world: &mut World) -> Self {
         // Setup members of struct
         // Define the layout of the bind group, ie. the members to bind to the shader.
@@ -155,7 +186,7 @@ impl FromWorld for MyComputeShaderPipeline {
             world
                 .resource::<RenderDevice>()
                 .create_bind_group_layout(&BindGroupLayoutDescriptor {
-                    label: Some("RenderTextureBindGroup_Layout"),
+                    label: Some("my_rendertexture_bindgroup_layout"),
                     entries: &[BindGroupLayoutEntry {
                         binding: 0,
                         visibility: ShaderStages::COMPUTE,
@@ -167,6 +198,77 @@ impl FromWorld for MyComputeShaderPipeline {
                         count: None,
                     }],
                 });
-        let shader = 
+        // Load the shader
+        let shader = world
+                .resource::<AssetServer>()
+                .load("shaders/my_compute_shader.wgsl");
+        // Create sub pipelines for our pipeline. They are created through the pipeline cache resource, keeping them cached, for efficient rendering.
+        let mut pipeline_cache = world.resource_mut::<PipelineCache>();
+        let init_pipeline_id = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
+            label: Some(Cow::from("my_compute_pipeline_init")),
+            layout: Some(vec![texture_bind_group_layout.clone()]),
+            shader: shader.clone(),
+            shader_defs: vec![],
+            entry_point: Cow::from("init"),
+        });
+        let update_pipeline_id = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
+            label: Some(Cow::from("my_compute_pipeline_update")),
+            layout: Some(vec![texture_bind_group_layout.clone()]),
+            shader,
+            shader_defs: vec![],
+            entry_point: Cow::from("update"),
+        });
+
+        // Construct pipeline object and return
+        MyComputeShaderPipeline {
+            texture_bind_group_layout,
+            init_pipeline_id,
+            update_pipeline_id,
+        }
     }
+}
+
+
+// -------------------------------------------------------------
+// Render node
+// Ties the pipeline into the Bevy render pipeline.
+// The rendernode executes our stuff and is part of
+// the application's render graph.
+// -------------------------------------------------------------
+
+// State of shader program
+enum MyComputeShaderState {
+    Loading,
+    Init,
+    Update,
+}
+
+struct MyComputeShaderNode {
+    state: MyComputeShaderState,
+}
+
+impl Default for MyComputeShaderNode {
+    fn default() -> Self {
+        Self {
+            state: MyComputeShaderState::Loading,
+        }
+    }
+}
+
+impl render_graph::Node for MyComputeShaderNode {
+    fn update(&mut self, _world: &mut World) {
+        
+    }
+
+    fn run(
+            &self,
+            graph: &mut render_graph::RenderGraphContext,
+            render_context: &mut RenderContext,
+            world: &World,
+        ) -> Result<(), render_graph::NodeRunError> {
+        
+    }
+    
+
+    
 }
