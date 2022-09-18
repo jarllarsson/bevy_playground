@@ -123,11 +123,11 @@ impl Plugin for MyComputeShaderPlugin {
         // Create render graph node for our shader.
         // It defines the dependencies our shader and its resources has to others, and schedules it.
         let mut render_graph = render_app.world.resource_mut::<RenderGraph>();
-        const my_compute_node_name: &str = "my_compute_node";
+        const MY_COMPUTE_NODE_NAME: &str = "my_compute_node";
         // Make the node
-        render_graph.add_node(my_compute_node_name, MyComputeShaderNode::default());
+        render_graph.add_node(MY_COMPUTE_NODE_NAME, MyComputeShaderNode::default());
         // Schedule node to run before the camera node, check for OK with unwrap (panics if not)
-        render_graph.add_node_edge(my_compute_node_name, bevy::render::main_graph::node::CAMERA_DRIVER).unwrap();
+        render_graph.add_node_edge(MY_COMPUTE_NODE_NAME, bevy::render::main_graph::node::CAMERA_DRIVER).unwrap();
     }
 }
 
@@ -256,19 +256,79 @@ impl Default for MyComputeShaderNode {
 }
 
 impl render_graph::Node for MyComputeShaderNode {
-    fn update(&mut self, _world: &mut World) {
-        
+
+    // Update function of node, used to update states if the shader asset becomes loaded or has been first run-inited.
+    fn update(&mut self, world: &mut World) {
+        let pipeline = world.resource::<MyComputeShaderPipeline>();
+        let pipeline_cache = world.resource::<PipelineCache>();
+
+        // Handle states, we do this to make sure shaders are run when they have been loaded.
+        // Match matches the pattern with the list of scrutinees, 
+        // can be used as switch statement or more advanced pattern matching
+        match self.state {
+            MyComputeShaderState::Loading => {
+                // In the loading state we check if the current cached init pipeline matches
+                // the requirements of an Ok one.
+                // This is done by supplying the Ok-enum of CachedPipelineState as a pattern.  (_ is used to wildcard pipeline type)
+                // If it matches with the cached pipeline we query, ie. if the cached pipeline (of our type) is also the Ok value...
+                // ... we change state to to Init.
+                if let CachedPipelineState::Ok(_) =
+                     pipeline_cache.get_compute_pipeline_state(pipeline.init_pipeline_id)
+                // if pipeline_cache.get_compute_pipeline_state(pipeline.init_pipeline_id) == CachedPipelineState::Ok(_)
+                {
+                    self.state = MyComputeShaderState::Init;
+                }
+            }
+            // Keep us in init state until the update pipeline is confirmed loaded as well
+            MyComputeShaderState::Init => {
+                if let CachedPipelineState::Ok(_) =
+                     pipeline_cache.get_compute_pipeline_state(pipeline.update_pipeline_id)
+                {
+                    self.state = MyComputeShaderState::Update;
+                }
+            }
+            MyComputeShaderState::Update => {} // No change from this state
+        }
     }
 
+    // Run/Dispatch shaders depending on state of node
     fn run(
             &self,
-            graph: &mut render_graph::RenderGraphContext,
+            _graph: &mut render_graph::RenderGraphContext,
             render_context: &mut RenderContext,
             world: &World,
         ) -> Result<(), render_graph::NodeRunError> {
-        
-    }
-    
+        let texture_bind_group = &world.resource::<MyComputeShaderRenderTargetBindGroup>().0;
+        let pipeline = world.resource::<MyComputeShaderPipeline>();
+        let pipeline_cache = world.resource::<PipelineCache>();
 
-    
+        let mut pass = render_context
+            .command_encoder
+            .begin_compute_pass(&ComputePassDescriptor {
+                label: Some("my_compute_pass")
+            });
+        pass.set_bind_group(0, texture_bind_group, &[]);
+
+        // Select pipeline based on the state
+        match self.state {
+            MyComputeShaderState::Loading => {} // Nothing to run when loading cache...
+            MyComputeShaderState::Init => {
+                // Fetch the init pipeline from the cache
+                let init_pipeline = pipeline_cache
+                    .get_compute_pipeline(pipeline.init_pipeline_id)
+                    .unwrap();
+                pass.set_pipeline(init_pipeline);
+                pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE, SIZE.1 / WORKGROUP_SIZE, 1);
+            }
+            MyComputeShaderState::Update => {
+                // Fetch the update pipeline from the cache
+                let update_pipeline = pipeline_cache
+                    .get_compute_pipeline(pipeline.update_pipeline_id)
+                    .unwrap();
+                pass.set_pipeline(update_pipeline);
+                pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE, SIZE.1 / WORKGROUP_SIZE, 1);
+            }
+        }
+        Ok(())
+    }
 }
