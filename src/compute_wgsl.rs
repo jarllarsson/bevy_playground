@@ -313,12 +313,14 @@ impl render_graph::Node for MyComputeShaderNode {
         match self.state {
             MyComputeShaderState::Loading => {} // Nothing to run when loading cache...
             MyComputeShaderState::Init => {
+                /*
                 // Fetch the init pipeline from the cache
                 let init_pipeline = pipeline_cache
                     .get_compute_pipeline(pipeline.init_pipeline_id)
                     .unwrap();
                 pass.set_pipeline(init_pipeline);
                 pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE, SIZE.1 / WORKGROUP_SIZE, 1);
+            */
             }
             MyComputeShaderState::Update => {
                 // Fetch the update pipeline from the cache
