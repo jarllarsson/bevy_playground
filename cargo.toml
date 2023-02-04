@@ -8,6 +8,7 @@ edition = "2021" # this needs to be 2021, or you need to set "resolver=2"
 [dependencies]
 bevy = "0.9.1" # make sure this is the latest version
 rand = "0.8"
+lerp = "0.4"
 
 [[example]]
 name = "hello"
@@ -47,3 +48,13 @@ path = "src/compute_wgsl.rs"
 name = "Compute shader WGSL"
 description = "Barebones example of WGSL compute shader in bevy."
 category = "Compute"
+
+
+[[example]]
+name = "3d_marble_game_glsl"
+path = "src/3d_marble_game/3d_marble_game_glsl.rs"
+
+[package.metadata.example.3d_marble_game_glsl]
+name = "3d Marble game with GLSL materials"
+description = "Barebones marble game with player input, physics and shaders."
+category = "3d Rendering"
