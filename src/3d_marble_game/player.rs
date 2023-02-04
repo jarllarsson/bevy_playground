@@ -50,6 +50,13 @@ fn player_movement(
         } else {
             0.0
         };
+        /*let xdir = if keyboard_input.pressed(KeyCode::Up) {
+            -1.
+        } else if keyboard_input.pressed(KeyCode::Down) {
+            1.
+        } else {
+            0.0
+        };*/
         let dt = time.delta_seconds();
         let old_pos = transform.translation;
 

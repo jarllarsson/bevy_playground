@@ -85,6 +85,13 @@ fn setup(
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..default()
     });
+
+    /* Log examples
+    error!("Unknown condition!");
+    warn!("Something unusual happened!");
+    info!("Entered game level: {}", 2);
+    debug!("x: {}, state: {:?}", 0.1, "test");
+    trace!("entity transform: {:?}", Transform::from_xyz(-2.0, 2.5, 5.0));*/
 }
 
 /*fn cube_animation(
