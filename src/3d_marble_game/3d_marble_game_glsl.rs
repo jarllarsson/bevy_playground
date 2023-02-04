@@ -5,9 +5,13 @@
 // * The sphere has physics
 // * The sphere falls off the world when outside and game restarts
 
+// Project modules
 mod player;
 
+// Includes from project modules
 use player::PlayerPlugin;
+
+// External includes
 
 use std::{
     f32::consts::PI,
@@ -17,6 +21,8 @@ use rand::{
     thread_rng, 
     Rng
 };
+
+// Bevy includes
 
 use bevy::{
     pbr::{MaterialPipeline, MaterialPipelineKey},
@@ -30,40 +36,38 @@ use bevy::{
     },
 };
 
+// Component types
 
 #[derive(Component)]
 struct Player;
 
+#[derive(Component)]
+struct Speed(Vec2);
+impl Default for Speed
+{
+    fn default() -> Self {
+        Self(Vec2::new(0., 500.))
+    }
+}
+
+// App entry point
+
 fn main() {
+    // Setup and run Bevy
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(MaterialPlugin::<MyCustomMaterial>::default())
         .add_plugin(PlayerPlugin)
         .add_startup_system(setup)
-        .add_system(cube_animation)
+        // .add_system(cube_animation)
         .run();
 }
 
+// Main setup
+
 fn setup(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<MyCustomMaterial>>,
-    asset_server: Res<AssetServer>,
 ) {
-    // Make a sphere
-    commands.spawn(MaterialMeshBundle {
-        mesh: meshes.add(Mesh::from(shape::UVSphere { radius: 1.0, sectors: 10, stacks: 10 })),
-        transform: Transform::from_xyz(0.0, 0.5, 0.0),
-        material: materials.add(MyCustomMaterial {
-            color: Color::BLUE,
-            time: 0.0,
-            color_texture: Some(asset_server.load("block.png")),
-            alpha_mode: AlphaMode::Blend,
-        }),
-        ..default()
-    })
-    // Custom components
-    .insert(Player);
 
     // Make a camera
     commands.spawn(Camera3dBundle {
@@ -83,7 +87,7 @@ fn setup(
     });
 }
 
-fn cube_animation(
+/*fn cube_animation(
     time: Res<Time>,
     mut materials: ResMut<Assets<MyCustomMaterial>>,
     mut query: Query<(&Handle<MyCustomMaterial>, &mut Transform, With<Player>)>
@@ -106,7 +110,7 @@ fn cube_animation(
             }
         }
     }
-}
+}*/
 
 // Shader buffer bindings
 // https://docs.rs/bevy/0.8.0/bevy/render/render_resource/trait.AsBindGroup.html

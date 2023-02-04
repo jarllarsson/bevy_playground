@@ -1,6 +1,6 @@
 use bevy::{prelude::*, math::Vec3Swizzles};
 use lerp::Lerp;
-use crate::{Player};
+use crate::{Player, Speed, MyCustomMaterial};
 
 
 pub struct PlayerPlugin;
@@ -15,31 +15,33 @@ impl Plugin for PlayerPlugin{
 }
 
 fn player_spawn(
-    mut commands: Commands
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<MyCustomMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
-    // Create entity and add to entity bundle
-    /*
-    commands.spawn(SpriteBundle {
-        texture: sprite_images.player.0.clone(),
-        transform: Transform {
-            translation: Vec3::new(0., bottom + 400., 10.),
-            scale: Vec3::new(0.5, 0.5, 1.0),
-            ..Default::default()
-        },
-        ..Default::default()
+    // Make a player sphere
+    commands.spawn(MaterialMeshBundle {
+        mesh: meshes.add(Mesh::from(shape::UVSphere { radius: 1.0, sectors: 10, stacks: 10 })),
+        transform: Transform::from_xyz(0.0, 0.5, 0.0),
+        material: materials.add(MyCustomMaterial {
+            color: Color::BLUE,
+            time: 0.0,
+            color_texture: Some(asset_server.load("block.png")),
+            alpha_mode: AlphaMode::Blend,
+        }),
+        ..default()
     })
     // Custom components
-    .insert(Player); // Unit struct to define player type
     .insert(Speed { 0: Vec2::new(0., 0.) })
-    .insert(OldPos::default())
-    .insert(PlayerReadyFire(true));*/
+    .insert(Player);
 }
 
 fn player_movement(
+    time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<(/*&mut Speed, */&mut Transform, With<Player>)>
-){
-    /*
+    mut query: Query<(&mut Speed, &mut Transform, With<Player>)>
+){  
     if let Ok((mut speed, mut transform, _)) = query.get_single_mut() {
         let dir = if keyboard_input.pressed(KeyCode::Left) {
             -1.
@@ -48,19 +50,22 @@ fn player_movement(
         } else {
             0.0
         };
-
+        let dt = time.delta_seconds();
         let old_pos = transform.translation;
-        speed.0.x += 500.0 * dir * TIME_STEP;
-        speed.0.x =  speed.0.x.lerp(0., 1. - 0.5f32.powf(TIME_STEP));
+
+        // Accelerate
+        speed.0.x += 1.0 * dir * dt;
+        speed.0.x =  speed.0.x.lerp(0., 1. - 0.5f32.powf(dt)); // Friction
         if speed.0.x > 100. { speed.0.x = 100. };
         if speed.0.x < -100. { speed.0.x = -100.};
 
-        transform.translation.x += speed.0.x * TIME_STEP;
-        speed.0.y -= 1000. * TIME_STEP;
-        transform.translation.y += speed.0.y * TIME_STEP;
+        // Update position with velocity
+        transform.translation.x += speed.0.x * dt;
+        // speed.0.y -= 1000. * dt;
+        // transform.translation.y += speed.0.y * dt;
 
         let pos = &mut transform.translation;
-        let area = Vec3::new(win_size.w / 2., win_size.h / 2., 0.);
+        /*let area = Vec3::new(win_size.w / 2., win_size.h / 2., 0.);
         
         if pos.x > area.x || pos.x < -area.x
         {
@@ -69,7 +74,7 @@ fn player_movement(
         if pos.y > area.y || pos.y < -area.y
         {
             pos.y = old_pos.y;
-        }
+        }*/
     }
-    */
+    
 }
