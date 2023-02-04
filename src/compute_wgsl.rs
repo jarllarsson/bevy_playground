@@ -28,10 +28,11 @@ const WORKGROUP_SIZE: u32 = 8;
 // Derives clone so its internals are deep copied,
 // Deref to get the Image from handle (struct must be single-item for this!)
 // and ExtractResource in order to be able to extract the image from bevy's main/game "world" to its render "world"
-#[derive(Clone, Deref, ExtractResource)]
+#[derive(Resource, Clone, Deref, ExtractResource)]
 struct MyComputeShaderRenderTarget(Handle<Image>);
 
 // Custom struct containing bind group of resources for our shader.
+#[derive(Resource)]
 struct  MyComputeShaderRenderTargetBindGroup(BindGroup);
 
 
@@ -167,6 +168,7 @@ fn queue_bind_group(
 
 // Custom struct defining the pipeline, contains references to the bind groups that binds the resources needed
 // and the pipelines for initializing and updating.
+#[derive(Resource)]
 pub struct MyComputeShaderPipeline {
     texture_bind_group_layout: BindGroupLayout,
     init_pipeline_id: CachedComputePipelineId,
