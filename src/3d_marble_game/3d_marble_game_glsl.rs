@@ -42,11 +42,11 @@ use bevy::{
 struct Player;
 
 #[derive(Component)]
-struct Speed(Vec2);
+struct Speed(Vec3);
 impl Default for Speed
 {
     fn default() -> Self {
-        Self(Vec2::new(0., 500.))
+        Self(Vec3::new(0., 0., 0.))
     }
 }
 
@@ -71,7 +71,7 @@ fn setup(
 
     // Make a camera
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(0., 2.5, -5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 
