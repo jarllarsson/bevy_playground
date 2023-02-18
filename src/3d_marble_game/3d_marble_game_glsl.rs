@@ -9,6 +9,7 @@
 mod player;
 mod camera;
 
+use lerp::num_traits::clamp;
 // Includes from project modules
 use player::PlayerPlugin;
 use camera::CameraPlugin;
@@ -35,7 +36,7 @@ use bevy::{
         render_resource::{
             AsBindGroup, RenderPipelineDescriptor, ShaderRef, SpecializedMeshPipelineError,
         },
-    },
+    }, math::Vec3Swizzles,
 };
 
 use bevy_prototype_debug_lines::*;
@@ -47,6 +48,9 @@ struct Player;
 
 #[derive(Component)]
 struct Camera;
+
+#[derive(Component)]
+struct FloorTile;
 
 #[derive(Component)]
 struct Speed(Vec3);
@@ -68,6 +72,13 @@ enum SystemType {
     CameraMovement,
 }
 
+// Global constants
+const MARBLE_RADIUS: f32 = 1.;
+const FLOOR_TILE_NUM: u8 = 40;
+const FLOOR_TILE_SIZE: f32 = 2.;
+const FLOOR_SIZE: f32 = FLOOR_TILE_NUM as f32 * FLOOR_TILE_SIZE;
+const FLOOR_POSITION: Vec3 = Vec3::new(-FLOOR_SIZE * 0.5, -MARBLE_RADIUS * 2., -FLOOR_SIZE * 0.5);
+
 // App entry point
 
 fn main() {
@@ -79,6 +90,7 @@ fn main() {
         .add_plugin(CameraPlugin)
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_startup_system(setup)
+        .add_system(floor_magic)
         // .add_system(cube_animation)
         .run();
 }
@@ -100,19 +112,18 @@ fn setup(
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..default()
     });
-    let square_num = 10;
-    let square_size = 2.;
-    let offset = square_num as f32 * square_size * 0.5;
-    for x in 0..square_num-1 {
-        for z in 0..square_num-1 {
-            let x_norm = x as f32 / square_num as f32;
-            let z_norm = z as f32 / square_num as f32;
+
+    for x in 0..FLOOR_TILE_NUM-1 {
+        for z in 0..FLOOR_TILE_NUM-1 {
+            let x_norm = x as f32 / FLOOR_TILE_NUM as f32;
+            let z_norm = z as f32 / FLOOR_TILE_NUM as f32;
             commands.spawn(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Cube { size: square_size })),
+                mesh: meshes.add(Mesh::from(shape::Cube { size: FLOOR_TILE_SIZE })),
                 material: materials.add(Color::rgb(x_norm, 0.0, z_norm).into()),
-                transform: Transform::from_xyz(x as f32 * square_size - offset, -1., z as f32 * square_size - offset),
+                transform: Transform::from_translation(Vec3::new(x as f32 * FLOOR_TILE_SIZE, 0., z as f32 * FLOOR_TILE_SIZE) + FLOOR_POSITION),
                 ..default()
-            });
+            })
+            .insert(FloorTile);
         }
     }
 
@@ -122,6 +133,24 @@ fn setup(
     info!("Entered game level: {}", 2);
     debug!("x: {}, state: {:?}", 0.1, "test");
     trace!("entity transform: {:?}", Transform::from_xyz(-2.0, 2.5, 5.0));*/
+}
+
+fn floor_magic(
+    time: Res<Time>,
+    mut floor_query: Query<&mut Transform, (With<FloorTile>, Without<Player>)>,
+    player_query: Query<&Transform, (With<Player>, Without<FloorTile>)>,
+){
+    if let Ok(player_transform) = player_query.get_single() {
+        let player_translation = player_transform.translation;
+        for mut cube_transform in floor_query.iter_mut() {
+            let time_sine = time.elapsed_seconds().sin() as f32;
+
+            let dist_to_player = player_translation.xz().distance(cube_transform.translation.xz());
+            let dist_to_player_floorspace = ((dist_to_player / FLOOR_TILE_SIZE).floor() - 2.).max(0.);
+            cube_transform.translation.y = FLOOR_POSITION.y + time_sine * dist_to_player_floorspace;
+            // cube_transform.rotation = Quat::from_rotation_y((time_sine + 1.0) * PI);
+        }
+    }
 }
 
 /*fn cube_animation(

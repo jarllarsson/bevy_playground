@@ -1,7 +1,7 @@
 use bevy::{prelude::*, math::Vec3Swizzles};
 use bevy_prototype_debug_lines::*;
 use lerp::Lerp;
-use crate::{Player, Camera, Angle, Speed, MyCustomMaterial, SystemType};
+use crate::{Player, Camera, Angle, Speed, MyCustomMaterial, SystemType, MARBLE_RADIUS};
 
 
 pub struct PlayerPlugin;
@@ -23,7 +23,7 @@ fn player_spawn(
 ) {
     // Make a player sphere
     commands.spawn(MaterialMeshBundle {
-        mesh: meshes.add(Mesh::from(shape::UVSphere { radius: 1.0, sectors: 10, stacks: 10 })),
+        mesh: meshes.add(Mesh::from(shape::UVSphere { radius: MARBLE_RADIUS, sectors: 10, stacks: 10 })),
         transform: Transform::from_xyz(0.0, 0.5, 0.0),
         material: materials.add(MyCustomMaterial {
             color: Color::BLUE,
@@ -59,7 +59,7 @@ fn player_movement(
         }
 
         // Accelerate
-        speed.0 += 2.0 * move_input * dt;
+        speed.0 += 8.0 * move_input * dt;
          // Friction
         let friction_t = 1. - 0.5f32.powf(dt);
         speed.0 =  speed.0.lerp(Vec3::splat(0.), friction_t);
