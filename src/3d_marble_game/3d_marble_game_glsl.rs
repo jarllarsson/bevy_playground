@@ -36,6 +36,8 @@ use bevy::{
     },
 };
 
+use bevy_prototype_debug_lines::*;
+
 // Component types
 
 #[derive(Component)]
@@ -58,6 +60,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(MaterialPlugin::<MyCustomMaterial>::default())
         .add_plugin(PlayerPlugin)
+        .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_startup_system(setup)
         // .add_system(cube_animation)
         .run();
@@ -71,7 +74,7 @@ fn setup(
 
     // Make a camera
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0., 2.5, -5.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(0., 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 
