@@ -87,6 +87,8 @@ fn main() {
 
 fn setup(
     mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // Light the sphere
     commands.spawn(PointLightBundle {
@@ -98,6 +100,21 @@ fn setup(
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..default()
     });
+    let square_num = 10;
+    let square_size = 2.;
+    let offset = square_num as f32 * square_size * 0.5;
+    for x in 0..square_num-1 {
+        for z in 0..square_num-1 {
+            let x_norm = x as f32 / square_num as f32;
+            let z_norm = z as f32 / square_num as f32;
+            commands.spawn(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Cube { size: square_size })),
+                material: materials.add(Color::rgb(x_norm, 0.0, z_norm).into()),
+                transform: Transform::from_xyz(x as f32 * square_size - offset, -1., z as f32 * square_size - offset),
+                ..default()
+            });
+        }
+    }
 
     /* Log examples
     error!("Unknown condition!");

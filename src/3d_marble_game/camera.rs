@@ -44,10 +44,10 @@ fn camera_movement(
             let dt = time.delta_seconds();
             // Construct input vector from keyboard presses
             let move_input = Vec2::new(
-                if kb_input.pressed(KeyCode::Left) {-1.} else if kb_input.pressed(KeyCode::Right) {1.} else {0.0},
+                if kb_input.pressed(KeyCode::Left) {1.} else if kb_input.pressed(KeyCode::Right) {-1.} else {0.0},
                 if kb_input.pressed(KeyCode::Down) {-1.} else if kb_input.pressed(KeyCode::Up) {1.} else {0.0});
             
-            camera_angle.0 += move_input.x * dt;
+            camera_angle.0 += move_input.x * 3. * dt;
             let max_angle = 2. * PI;
             if camera_angle.0 > max_angle {camera_angle.0 -= max_angle;}
             if camera_angle.0 < 0.        {camera_angle.0 += max_angle;}

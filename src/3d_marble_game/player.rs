@@ -59,7 +59,7 @@ fn player_movement(
         }
 
         // Accelerate
-        speed.0 += 1.0 * move_input * dt;
+        speed.0 += 2.0 * move_input * dt;
          // Friction
         let friction_t = 1. - 0.5f32.powf(dt);
         speed.0 =  speed.0.lerp(Vec3::splat(0.), friction_t);
