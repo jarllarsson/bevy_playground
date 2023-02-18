@@ -1,15 +1,17 @@
 // A simple 3d marble game
 // Goals:
-// * A sphere controllable by the player with input
-// * A camera that follows the sphere
-// * The sphere has physics
-// * The sphere falls off the world when outside and game restarts
+// * A sphere controllable by the player with input. DONE
+// * A camera that follows the sphere.
+// * The sphere has physics - Use Rapier for physics?
+// * The sphere falls off the world when outside and game restarts.
 
-// Project modules
+// Project module declaration (same as file names)
 mod player;
+mod camera;
 
 // Includes from project modules
 use player::PlayerPlugin;
+use camera::CameraPlugin;
 
 // External includes
 
@@ -44,12 +46,26 @@ use bevy_prototype_debug_lines::*;
 struct Player;
 
 #[derive(Component)]
+struct Camera;
+
+#[derive(Component)]
 struct Speed(Vec3);
 impl Default for Speed
 {
     fn default() -> Self {
         Self(Vec3::new(0., 0., 0.))
     }
+}
+
+#[derive(Component)]
+struct Angle(f32);
+
+// Update order labels
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(SystemLabel)]
+enum SystemType {
+    PlayerMovement,
+    CameraMovement,
 }
 
 // App entry point
@@ -60,6 +76,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(MaterialPlugin::<MyCustomMaterial>::default())
         .add_plugin(PlayerPlugin)
+        .add_plugin(CameraPlugin)
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_startup_system(setup)
         // .add_system(cube_animation)
@@ -71,13 +88,6 @@ fn main() {
 fn setup(
     mut commands: Commands,
 ) {
-
-    // Make a camera
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0., 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
-
     // Light the sphere
     commands.spawn(PointLightBundle {
         point_light: PointLight {

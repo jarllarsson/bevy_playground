@@ -1,7 +1,7 @@
 use bevy::{prelude::*, math::Vec3Swizzles};
 use bevy_prototype_debug_lines::*;
 use lerp::Lerp;
-use crate::{Player, Speed, MyCustomMaterial};
+use crate::{Player, Camera, Angle, Speed, MyCustomMaterial, SystemType};
 
 
 pub struct PlayerPlugin;
@@ -9,9 +9,9 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin{
     fn build(&self, app: &mut App){
         app.add_startup_stage(
-            "game_setup_actors",
+            "setup_player",
             SystemStage::single(player_spawn))
-        .add_system(player_movement);
+        .add_system(player_movement.label(SystemType::PlayerMovement));
     }
 }
 
@@ -42,18 +42,24 @@ fn player_movement(
     time: Res<Time>,
     kb_input: Res<Input<KeyCode>>,
     mut lines: ResMut<DebugLines>,
-    mut query: Query<(&mut Speed, &mut Transform, With<Player>)>
+    mut player_query: Query<(&mut Speed, &mut Transform), (With<Player>, Without<Camera>)>,
+    camera_query: Query<(&Angle), (With<Camera>, Without<Player>)>
 ){  
-    if let Ok((mut speed, mut transform, _)) = query.get_single_mut() {
+    if let Ok((mut speed, mut transform)) = player_query.get_single_mut() {
         let dt = time.delta_seconds();
         // Construct input vector from keyboard presses
-        let move_input = Vec2::new(
-            if kb_input.pressed(KeyCode::Left) {-1.} else if kb_input.pressed(KeyCode::Right) {1.} else {0.0},
-            if kb_input.pressed(KeyCode::Down) {-1.} else if kb_input.pressed(KeyCode::Up) {1.} else {0.0});
+        let mut move_input = Vec3::new(
+            if kb_input.pressed(KeyCode::A) {-1.} else if kb_input.pressed(KeyCode::D) {1.} else {0.},  // Sideways (X is right)
+            0.,
+            if kb_input.pressed(KeyCode::W) {-1.} else if kb_input.pressed(KeyCode::S) {1.} else {0.}); // Forward/Backward (-Z is forward)
+
+        // Transform input to world space
+        if let Ok(angle) = camera_query.get_single() {
+            move_input = Quat::from_rotation_y(angle.0) * move_input;
+        }
 
         // Accelerate
-        speed.0.x += 1.0 * move_input.x * dt; // Sideways (X is right)
-        speed.0.z -= 1.0 * move_input.y * dt; // Forward/Backward (-Z is forward)
+        speed.0 += 1.0 * move_input * dt;
          // Friction
         let friction_t = 1. - 0.5f32.powf(dt);
         speed.0 =  speed.0.lerp(Vec3::splat(0.), friction_t);
@@ -72,6 +78,8 @@ fn player_movement(
         info!("Rotation: {:?}", transform.rotation);
         lines.line_gradient(transform.translation, transform.translation + transform.up().normalize() * 2., 0., 
             Color::AZURE, Color::FUCHSIA);
+        lines.line_gradient(transform.translation, transform.translation + move_input * 2., 0., 
+            Color::GREEN, Color::ORANGE);
     }
     
 }
