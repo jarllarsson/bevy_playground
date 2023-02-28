@@ -1,7 +1,6 @@
-use bevy::{prelude::*, math::Vec3Swizzles};
+use bevy::{prelude::*};
 use bevy_prototype_debug_lines::*;
-use lerp::Lerp;
-use crate::{Player, Camera, CameraRotation, Speed, MyCustomMaterial, SystemType, MARBLE_RADIUS};
+use crate::{Player, Camera, CameraRotation, Speed, MyCustomMaterial, SystemOrder, MARBLE_RADIUS};
 
 
 pub struct PlayerPlugin;
@@ -11,7 +10,8 @@ impl Plugin for PlayerPlugin{
         app.add_startup_stage(
             "setup_player",
             SystemStage::single(player_spawn))
-        .add_system(player_movement.label(SystemType::PlayerMovement));
+        .add_system(player_movement.label(SystemOrder::PlayerMovement))
+        .add_system(player_animation);
     }
 }
 
@@ -29,6 +29,7 @@ fn player_spawn(
             color: Color::BLUE,
             time: 0.0,
             color_texture: Some(asset_server.load("ball.png")),
+            noise_texture: Some(asset_server.load("manifold_noise.png")),
             alpha_mode: AlphaMode::Blend,
         }),
         ..default()
@@ -81,4 +82,17 @@ fn player_movement(
             Color::GREEN, Color::ORANGE);
     }
     
+}
+
+fn player_animation(
+    time: Res<Time>,
+    mut materials: ResMut<Assets<MyCustomMaterial>>,
+    mut query: Query<&Handle<MyCustomMaterial>, With<Player>>
+){
+    for (mat_handle) in query.iter_mut() {
+        let time_sine = time.elapsed_seconds().sin() as f32;
+        if let Some(mat) = materials.get_mut(mat_handle) {
+            mat.time = time_sine;
+        }
+    }
 }

@@ -73,7 +73,7 @@ impl Default for CameraRotation
 // Update order labels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[derive(SystemLabel)]
-enum SystemType {
+enum SystemOrder {
     PlayerMovement,
     CameraMovement,
 }
@@ -207,7 +207,7 @@ fn floor_magic(
 // Shader buffer bindings
 // https://docs.rs/bevy/0.8.0/bevy/render/render_resource/trait.AsBindGroup.html
 #[derive(AsBindGroup, Clone, TypeUuid)]
-#[uuid = "f7bd480f-cf1c-4d67-bf96-98bcedc996c0"]
+#[uuid = "69196246-07cd-4581-9885-167958593672"]
 pub struct MyCustomMaterial {
     #[uniform(0)]
     color: Color,
@@ -216,6 +216,9 @@ pub struct MyCustomMaterial {
     #[texture(1)]
     #[sampler(2)]
     color_texture: Option<Handle<Image>>,
+    #[texture(3)]
+    #[sampler(4)]
+    noise_texture: Option<Handle<Image>>,
     alpha_mode: AlphaMode,
 }
 
@@ -227,7 +230,7 @@ pub struct MyCustomMaterial {
     }
 
     fn fragment_shader() -> ShaderRef {
-        "shaders/custom_material.frag".into()
+        "shaders/custom_material_marble.frag".into()
     }
 
     fn alpha_mode(&self) -> AlphaMode {

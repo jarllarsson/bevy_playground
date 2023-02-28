@@ -1,7 +1,7 @@
 use bevy::{prelude::*};
 use bevy_prototype_debug_lines::*;
 use lerp::Lerp;
-use crate::{Player, Camera, CameraRotation, Speed, SystemType};
+use crate::{Player, Camera, CameraRotation, Speed, SystemOrder};
 use std::{f32::consts::PI};
 pub struct CameraPlugin;
 
@@ -12,8 +12,8 @@ impl Plugin for CameraPlugin{
             SystemStage::single(camera_spawn))
         .add_system(
             camera_movement
-            .after(SystemType::PlayerMovement)
-            .label(SystemType::CameraMovement)
+            .after(SystemOrder::PlayerMovement)
+            .label(SystemOrder::CameraMovement)
         );
     }
 }
