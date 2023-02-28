@@ -1,7 +1,7 @@
 use bevy::{prelude::*, math::Vec3Swizzles};
 use bevy_prototype_debug_lines::*;
 use lerp::Lerp;
-use crate::{Player, Camera, Angle, Speed, MyCustomMaterial, SystemType, MARBLE_RADIUS};
+use crate::{Player, Camera, CameraRotation, Speed, MyCustomMaterial, SystemType, MARBLE_RADIUS};
 
 
 pub struct PlayerPlugin;
@@ -23,18 +23,18 @@ fn player_spawn(
 ) {
     // Make a player sphere
     commands.spawn(MaterialMeshBundle {
-        mesh: meshes.add(Mesh::from(shape::UVSphere { radius: MARBLE_RADIUS, sectors: 10, stacks: 10 })),
-        transform: Transform::from_xyz(0.0, 0.5, 0.0),
+        mesh: meshes.add(Mesh::from(shape::UVSphere { radius: MARBLE_RADIUS, sectors: 20, stacks: 20 })),
+        transform: Transform::from_xyz(0.0, MARBLE_RADIUS, 0.0),
         material: materials.add(MyCustomMaterial {
             color: Color::BLUE,
             time: 0.0,
-            color_texture: Some(asset_server.load("block.png")),
+            color_texture: Some(asset_server.load("ball.png")),
             alpha_mode: AlphaMode::Blend,
         }),
         ..default()
     })
     // Custom components
-    .insert(Speed { 0: Vec3::splat(0.) })
+    .insert(Speed::default())
     .insert(Player);
 }
 
@@ -43,7 +43,7 @@ fn player_movement(
     kb_input: Res<Input<KeyCode>>,
     mut lines: ResMut<DebugLines>,
     mut player_query: Query<(&mut Speed, &mut Transform), (With<Player>, Without<Camera>)>,
-    camera_query: Query<(&Angle), (With<Camera>, Without<Player>)>
+    camera_query: Query<(&CameraRotation), (With<Camera>, Without<Player>)>
 ){  
     if let Ok((mut speed, mut transform)) = player_query.get_single_mut() {
         let dt = time.delta_seconds();
@@ -55,7 +55,7 @@ fn player_movement(
 
         // Transform input to world space
         if let Ok(angle) = camera_query.get_single() {
-            move_input = Quat::from_rotation_y(angle.0) * move_input;
+            move_input = Quat::from_rotation_y(angle.0.y) * move_input;
         }
 
         // Accelerate
@@ -65,17 +65,16 @@ fn player_movement(
         speed.0 =  speed.0.lerp(Vec3::splat(0.), friction_t);
         // Clamp max speed
         let max_speed = 100.;
-        if speed.0.x > max_speed { speed.0.x = max_speed } else if speed.0.x < -max_speed { speed.0.x = -max_speed};
-        if speed.0.z > max_speed { speed.0.z = max_speed } else if speed.0.z < -max_speed { speed.0.z = -max_speed};
+        speed.0 = speed.0.clamp(Vec3::splat(-max_speed), Vec3::splat(max_speed));
 
         // Update position with velocity (arc=a*r)
         transform.translation += speed.0 * dt;
         let radius = 1.;
-        let rot_speed_z = -(speed.0.x).clamp(-1., 1.).asin();
-        let rot_speed_x = (speed.0.z).clamp(-1., 1.).asin();
+        let rot_speed_z = -(speed.0.x / max_speed).asin() * max_speed;
+        let rot_speed_x = (speed.0.z / max_speed).asin() * max_speed;
         transform.rotation = Quat::from_rotation_z( radius * rot_speed_z * dt) * transform.rotation;
         transform.rotation = Quat::from_rotation_x( radius * rot_speed_x * dt) * transform.rotation;
-        info!("Rotation: {:?}", transform.rotation);
+
         lines.line_gradient(transform.translation, transform.translation + transform.up().normalize() * 2., 0., 
             Color::AZURE, Color::FUCHSIA);
         lines.line_gradient(transform.translation, transform.translation + move_input * 2., 0., 

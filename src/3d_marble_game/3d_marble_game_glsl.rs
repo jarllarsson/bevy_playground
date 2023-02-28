@@ -57,12 +57,18 @@ struct Speed(Vec3);
 impl Default for Speed
 {
     fn default() -> Self {
-        Self(Vec3::new(0., 0., 0.))
+        Self(Vec3::splat(0.))
     }
 }
 
 #[derive(Component)]
-struct Angle(f32);
+struct CameraRotation(Vec2);
+impl Default for CameraRotation
+{
+    fn default() -> Self {
+        Self(Vec2::splat(0.))
+    }
+}
 
 // Update order labels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -74,10 +80,10 @@ enum SystemType {
 
 // Global constants
 const MARBLE_RADIUS: f32 = 1.;
-const FLOOR_TILE_NUM: u8 = 40;
-const FLOOR_TILE_SIZE: f32 = 2.;
+const FLOOR_TILE_NUM: u8 = 10;
+const FLOOR_TILE_SIZE: f32 = 8.;
 const FLOOR_SIZE: f32 = FLOOR_TILE_NUM as f32 * FLOOR_TILE_SIZE;
-const FLOOR_POSITION: Vec3 = Vec3::new(-FLOOR_SIZE * 0.5, -MARBLE_RADIUS * 2., -FLOOR_SIZE * 0.5);
+const FLOOR_POSITION: Vec3 = Vec3::new(-FLOOR_SIZE * 0.5, -FLOOR_TILE_SIZE * 0.5, -FLOOR_SIZE * 0.5);
 
 // App entry point
 
@@ -101,6 +107,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
     // Light the sphere
     commands.spawn(PointLightBundle {
@@ -113,13 +120,32 @@ fn setup(
         ..default()
     });
 
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            color: Color::rgb(1.0, 1.0, 1.0),
+            illuminance: 100000.0,
+            shadows_enabled: true,
+            ..default()
+        },
+        transform: Transform {
+            translation: Vec3::new(0.0, 2.0, 0.0),
+            rotation: Quat::from_rotation_x(-PI / 4.),
+            ..default()
+        },
+        ..default()
+    });
+
     for x in 0..FLOOR_TILE_NUM-1 {
         for z in 0..FLOOR_TILE_NUM-1 {
             let x_norm = x as f32 / FLOOR_TILE_NUM as f32;
             let z_norm = z as f32 / FLOOR_TILE_NUM as f32;
             commands.spawn(PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Cube { size: FLOOR_TILE_SIZE })),
-                material: materials.add(Color::rgb(x_norm, 0.0, z_norm).into()),
+                material: materials.add( StandardMaterial {
+                    base_color:         Color::rgb(x_norm, 0.0, z_norm),
+                    base_color_texture: Some(asset_server.load("cobblestone.png")),
+                    ..default()
+                }),
                 transform: Transform::from_translation(Vec3::new(x as f32 * FLOOR_TILE_SIZE, 0., z as f32 * FLOOR_TILE_SIZE) + FLOOR_POSITION),
                 ..default()
             })
@@ -147,7 +173,7 @@ fn floor_magic(
 
             let dist_to_player = player_translation.xz().distance(cube_transform.translation.xz());
             let dist_to_player_floorspace = ((dist_to_player / FLOOR_TILE_SIZE).floor() - 2.).max(0.);
-            cube_transform.translation.y = FLOOR_POSITION.y + time_sine * dist_to_player_floorspace;
+            // cube_transform.translation.y = FLOOR_POSITION.y + time_sine * dist_to_player_floorspace;
             // cube_transform.rotation = Quat::from_rotation_y((time_sine + 1.0) * PI);
         }
     }
