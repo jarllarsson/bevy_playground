@@ -16,8 +16,9 @@ layout(set = 1, binding = 4) uniform sampler   noise_sampler;
 
 
 void main() {
-    float noise_x = texture(sampler2D(noise_texture, noise_sampler), v_Uv + vec2(0.0, Time * 0.1)).r;
-    float noise_y = texture(sampler2D(noise_texture, noise_sampler), v_Uv + vec2(0.0, -Time * 0.1)).r;
+    float anim_t = sin(Time * 0.4);
+    float noise_x = texture(sampler2D(noise_texture, noise_sampler), v_Uv + vec2(0.0, anim_t)).r;
+    float noise_y = texture(sampler2D(noise_texture, noise_sampler), v_Uv + vec2(0.0, -anim_t)).r;
     o_Target = Color * texture(sampler2D(base_color_texture, base_color_sampler), v_Uv + vec2(noise_x, noise_y) * 0.1);
-    // o_Target = vec4(noise_x, noise_y, 0., 1.);
+    o_Target += vec4(noise_x, noise_y, 0., 1.) * .2;
 }

@@ -90,7 +90,7 @@ fn player_animation(
     mut query: Query<&Handle<MyCustomMaterial>, With<Player>>
 ){
     for (mat_handle) in query.iter_mut() {
-        let time_sine = time.elapsed_seconds().sin() as f32;
+        let time_sine = time.elapsed_seconds() as f32;
         if let Some(mat) = materials.get_mut(mat_handle) {
             mat.time = time_sine;
         }

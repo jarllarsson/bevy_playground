@@ -90,7 +90,11 @@ const FLOOR_POSITION: Vec3 = Vec3::new(-FLOOR_SIZE * 0.5, -FLOOR_TILE_SIZE * 0.5
 fn main() {
     // Setup and run Bevy
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins
+            .set(AssetPlugin {
+                watch_for_changes: true,
+                ..default()
+            }))
         .add_plugin(MaterialPlugin::<MyCustomMaterial>::default())
         .add_plugin(PlayerPlugin)
         .add_plugin(CameraPlugin)
@@ -107,7 +111,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
+    mut asset_server: Res<AssetServer>,
 ) {
     // Light the sphere
     commands.spawn(PointLightBundle {
