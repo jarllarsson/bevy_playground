@@ -68,7 +68,7 @@ fn setup(
     let image = images.add(image);
     
     // Setup the image to be rendered as a sprite to screen
-    commands.spawn_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         sprite: Sprite {
             custom_size: Some(Vec2::new(SIZE.0 as f32, SIZE.1 as f32)),
             ..default()
@@ -81,7 +81,7 @@ fn setup(
     commands.insert_resource(MyComputeShaderRenderTarget(image));
 
     // 2d camera for just displaying the texture
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
 }
 
 // ----------------------------------------------------------------------------

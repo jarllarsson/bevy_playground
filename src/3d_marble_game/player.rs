@@ -1,7 +1,7 @@
 use bevy::{prelude::*};
 use bevy_prototype_debug_lines::*;
-use crate::{Player, Camera, CameraRotation, Speed, MyCustomMaterial, SystemOrder, MARBLE_RADIUS};
-
+use crate::{Player, Camera, CameraRotation, Speed, MyCustomMaterial, SystemOrder, 
+    MARBLE_RADIUS, GAMEPAD_DEADZONE, GAMEPAD_AXIS_L_SENSITIVITY};
 
 pub struct PlayerPlugin;
 
@@ -42,9 +42,11 @@ fn player_spawn(
 fn player_movement(
     time: Res<Time>,
     kb_input: Res<Input<KeyCode>>,
+    gamepads: Res<Gamepads>,
+    gamepad_axes: Res<Axis<GamepadAxis>>,
     mut lines: ResMut<DebugLines>,
     mut player_query: Query<(&mut Speed, &mut Transform), (With<Player>, Without<Camera>)>,
-    camera_query: Query<(&CameraRotation), (With<Camera>, Without<Player>)>
+    camera_query: Query<&CameraRotation, (With<Camera>, Without<Player>)>
 ){  
     if let Ok((mut speed, mut transform)) = player_query.get_single_mut() {
         let dt = time.delta_seconds();
@@ -53,6 +55,17 @@ fn player_movement(
             if kb_input.pressed(KeyCode::A) {-1.} else if kb_input.pressed(KeyCode::D) {1.} else {0.},  // Sideways (X is right)
             0.,
             if kb_input.pressed(KeyCode::W) {-1.} else if kb_input.pressed(KeyCode::S) {1.} else {0.}); // Forward/Backward (-Z is forward)
+        // if we have a gamepad, let it override input
+        for gamepad in gamepads.iter() {
+            let move_input_raw = Vec3::new(
+                gamepad_axes.get(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickX)).unwrap(),
+                0.,
+                gamepad_axes.get(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickY)).unwrap());
+            if move_input_raw.length_squared() > GAMEPAD_DEADZONE * GAMEPAD_DEADZONE {
+                move_input.x = move_input_raw.x.abs().powf(GAMEPAD_AXIS_L_SENSITIVITY) * move_input_raw.x.signum();
+                move_input.z = move_input_raw.z.abs().powf(GAMEPAD_AXIS_L_SENSITIVITY) * move_input_raw.z.signum() * -1.;
+            }
+        }
 
         // Transform input to world space
         if let Ok(angle) = camera_query.get_single() {
@@ -89,7 +102,7 @@ fn player_animation(
     mut materials: ResMut<Assets<MyCustomMaterial>>,
     mut query: Query<&Handle<MyCustomMaterial>, With<Player>>
 ){
-    for (mat_handle) in query.iter_mut() {
+    for mat_handle in query.iter_mut() {
         let time_sine = time.elapsed_seconds() as f32;
         if let Some(mat) = materials.get_mut(mat_handle) {
             mat.time = time_sine;

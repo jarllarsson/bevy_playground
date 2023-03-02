@@ -9,7 +9,6 @@
 mod player;
 mod camera;
 
-use lerp::num_traits::clamp;
 // Includes from project modules
 use player::PlayerPlugin;
 use camera::CameraPlugin;
@@ -18,11 +17,6 @@ use camera::CameraPlugin;
 
 use std::{
     f32::consts::PI,
-};
-
-use rand::{
-    thread_rng, 
-    Rng
 };
 
 // Bevy includes
@@ -36,7 +30,7 @@ use bevy::{
         render_resource::{
             AsBindGroup, RenderPipelineDescriptor, ShaderRef, SpecializedMeshPipelineError,
         },
-    }, math::Vec3Swizzles,
+    }
 };
 
 use bevy_prototype_debug_lines::*;
@@ -84,6 +78,9 @@ const FLOOR_TILE_NUM: u8 = 10;
 const FLOOR_TILE_SIZE: f32 = 8.;
 const FLOOR_SIZE: f32 = FLOOR_TILE_NUM as f32 * FLOOR_TILE_SIZE;
 const FLOOR_POSITION: Vec3 = Vec3::new(-FLOOR_SIZE * 0.5, -FLOOR_TILE_SIZE * 0.5, -FLOOR_SIZE * 0.5);
+const GAMEPAD_DEADZONE: f32 = 0.1;
+const GAMEPAD_AXIS_L_SENSITIVITY: f32 = 1.5;
+const GAMEPAD_AXIS_R_SENSITIVITY: f32 = 5.5;
 
 // App entry point
 
@@ -100,8 +97,6 @@ fn main() {
         .add_plugin(CameraPlugin)
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_startup_system(setup)
-        .add_system(floor_magic)
-        // .add_system(cube_animation)
         .run();
 }
 
@@ -111,7 +106,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut asset_server: Res<AssetServer>,
+    asset_server: Res<AssetServer>,
 ) {
     // Light the sphere
     commands.spawn(PointLightBundle {
@@ -165,48 +160,7 @@ fn setup(
     trace!("entity transform: {:?}", Transform::from_xyz(-2.0, 2.5, 5.0));*/
 }
 
-fn floor_magic(
-    time: Res<Time>,
-    mut floor_query: Query<&mut Transform, (With<FloorTile>, Without<Player>)>,
-    player_query: Query<&Transform, (With<Player>, Without<FloorTile>)>,
-){
-    if let Ok(player_transform) = player_query.get_single() {
-        let player_translation = player_transform.translation;
-        for mut cube_transform in floor_query.iter_mut() {
-            let time_sine = time.elapsed_seconds().sin() as f32;
 
-            let dist_to_player = player_translation.xz().distance(cube_transform.translation.xz());
-            let dist_to_player_floorspace = ((dist_to_player / FLOOR_TILE_SIZE).floor() - 2.).max(0.);
-            // cube_transform.translation.y = FLOOR_POSITION.y + time_sine * dist_to_player_floorspace;
-            // cube_transform.rotation = Quat::from_rotation_y((time_sine + 1.0) * PI);
-        }
-    }
-}
-
-/*fn cube_animation(
-    time: Res<Time>,
-    mut materials: ResMut<Assets<MyCustomMaterial>>,
-    mut query: Query<(&Handle<MyCustomMaterial>, &mut Transform, With<Player>)>
-){
-    for (mat_handle, mut cube_transform, _) in query.iter_mut() {
-        let time_sine = time.elapsed_seconds().sin() as f32;
-        let dir = Vec3::new(0., 1., 0.);
-        cube_transform.translation = Vec3::new(0., 0.5, 0.) + dir * time_sine;
-        cube_transform.rotation = Quat::from_rotation_y((time_sine + 1.0) * PI);
-        if let Some(mat) = materials.get_mut(mat_handle) {
-            let mut rng = thread_rng();
-            mat.time = time_sine;
-            if rng.gen_bool(1.0 / 30.0) {
-                mat.color = Color::rgba(
-                    rng.gen_range(50..100) as f32 * 0.01, 
-                    rng.gen_range(50..100) as f32 * 0.01, 
-                    rng.gen_range(50..100) as f32 * 0.01, 
-                    1.0
-                );
-            }
-        }
-    }
-}*/
 
 // Shader buffer bindings
 // https://docs.rs/bevy/0.8.0/bevy/render/render_resource/trait.AsBindGroup.html
