@@ -32,8 +32,8 @@ use bevy::{
         },
     }
 };
-
 use bevy_prototype_debug_lines::*;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 // Component types
 
@@ -74,10 +74,8 @@ enum SystemOrder {
 
 // Global constants
 const MARBLE_RADIUS: f32 = 1.;
-const FLOOR_TILE_NUM: u8 = 10;
-const FLOOR_TILE_SIZE: f32 = 8.;
-const FLOOR_SIZE: f32 = FLOOR_TILE_NUM as f32 * FLOOR_TILE_SIZE;
-const FLOOR_POSITION: Vec3 = Vec3::new(-FLOOR_SIZE * 0.5, -FLOOR_TILE_SIZE * 0.5, -FLOOR_SIZE * 0.5);
+const FLOOR_SIZE: Vec3 = Vec3::new(80., 8., 80.);
+const FLOOR_POSITION: Vec3 = Vec3::new(0., -FLOOR_SIZE.y * 0.5, 0.);
 const GAMEPAD_DEADZONE: f32 = 0.1;
 const GAMEPAD_AXIS_L_SENSITIVITY: f32 = 1.5;
 const GAMEPAD_AXIS_R_SENSITIVITY: f32 = 5.5;
@@ -96,6 +94,7 @@ fn main() {
         .add_plugin(PlayerPlugin)
         .add_plugin(CameraPlugin)
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
+        .add_plugin(WorldInspectorPlugin)
         .add_startup_system(setup)
         .run();
 }
@@ -134,23 +133,21 @@ fn setup(
         ..default()
     });
 
-    for x in 0..FLOOR_TILE_NUM-1 {
-        for z in 0..FLOOR_TILE_NUM-1 {
-            let x_norm = x as f32 / FLOOR_TILE_NUM as f32;
-            let z_norm = z as f32 / FLOOR_TILE_NUM as f32;
-            commands.spawn(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Cube { size: FLOOR_TILE_SIZE })),
-                material: materials.add( StandardMaterial {
-                    base_color:         Color::rgb(x_norm, 0.0, z_norm),
-                    base_color_texture: Some(asset_server.load("cobblestone.png")),
-                    ..default()
-                }),
-                transform: Transform::from_translation(Vec3::new(x as f32 * FLOOR_TILE_SIZE, 0., z as f32 * FLOOR_TILE_SIZE) + FLOOR_POSITION),
+
+    commands.spawn((
+        PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Box::new(FLOOR_SIZE.x, FLOOR_SIZE.y, FLOOR_SIZE.z))),
+            material: materials.add( StandardMaterial {
+                base_color:         Color::SEA_GREEN,
+                base_color_texture: Some(asset_server.load("cobblestone.png")),
                 ..default()
-            })
-            .insert(FloorTile);
-        }
-    }
+            }),
+            transform: Transform::from_translation(FLOOR_POSITION),
+            ..default()
+        },
+        Name::new("Floor")
+    ))
+    .insert(FloorTile);
 
     /* Log examples
     error!("Unknown condition!");

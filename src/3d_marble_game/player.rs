@@ -22,18 +22,21 @@ fn player_spawn(
     asset_server: Res<AssetServer>,
 ) {
     // Make a player sphere
-    commands.spawn(MaterialMeshBundle {
-        mesh: meshes.add(Mesh::from(shape::UVSphere { radius: MARBLE_RADIUS, sectors: 20, stacks: 20 })),
-        transform: Transform::from_xyz(0.0, MARBLE_RADIUS, 0.0),
-        material: materials.add(MyCustomMaterial {
-            color: Color::BLUE,
-            time: 0.0,
-            color_texture: Some(asset_server.load("ball.png")),
-            noise_texture: Some(asset_server.load("manifold_noise.png")),
-            alpha_mode: AlphaMode::Blend,
-        }),
-        ..default()
-    })
+    commands.spawn((
+        MaterialMeshBundle {
+            mesh: meshes.add(Mesh::from(shape::UVSphere { radius: MARBLE_RADIUS, sectors: 20, stacks: 20 })),
+            transform: Transform::from_xyz(0.0, MARBLE_RADIUS, 0.0),
+            material: materials.add(MyCustomMaterial {
+                color: Color::BLUE,
+                time: 0.0,
+                color_texture: Some(asset_server.load("ball.png")),
+                noise_texture: Some(asset_server.load("manifold_noise.png")),
+                alpha_mode: AlphaMode::Blend,
+            }),
+            ..default()
+        },
+        Name::new("Player")
+    ))
     // Custom components
     .insert(Speed::default())
     .insert(Player);
