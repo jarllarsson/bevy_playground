@@ -1,9 +1,9 @@
 // A simple 3d marble game
 // Goals:
-// * A sphere controllable by the player with input. DONE
+// * A sphere controllable by the player with input.
 // * A camera that follows the sphere.
-// * The sphere has physics - Use Rapier for physics?
-// * The sphere falls off the world when outside and game restarts.
+// * TODO: The sphere has physics - Use Rapier for physics?
+// * TODO: The sphere falls off the world when outside and game restarts.
 
 // Project module declaration (same as file names)
 mod player;
