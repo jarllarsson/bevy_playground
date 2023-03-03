@@ -60,3 +60,12 @@ path = "src/3d_marble_game/3d_marble_game_glsl.rs"
 name = "3d Marble game with GLSL materials"
 description = "Barebones marble game with player input, physics and shaders."
 category = "3d Rendering"
+
+[[example]]
+name = "3d_mesh"
+path = "src/3d_mesh/3d_mesh.rs"
+
+[package.metadata.example.3d_mesh]
+name = "3d Mesh"
+description = "A test with loading a 3d mesh"
+category = "3d Rendering"
