@@ -27,7 +27,8 @@ use std::{
 use bevy::{
     pbr::{MaterialPipeline, MaterialPipelineKey},
     prelude::*,
-    reflect::TypeUuid,
+    reflect::{TypeUuid,        // For material id
+        Reflect, TypeRegistry},// For reflecting data to egui
     render::{
         mesh::MeshVertexBufferLayout,
         render_resource::{
@@ -49,7 +50,8 @@ struct Camera;
 #[derive(Component)]
 struct FloorTile;
 
-#[derive(Component)]
+#[derive(Reflect, Component)]
+#[reflect(Component)]
 struct Speed(Vec3);
 impl Default for Speed
 {
@@ -103,6 +105,9 @@ fn main() {
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_plugin(WorldInspectorPlugin)
         .add_startup_system(setup)
+        // EGUI Type registry
+        .register_type::<Speed>()
+        // Let's go
         .run();
 }
 
