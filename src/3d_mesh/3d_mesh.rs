@@ -9,10 +9,12 @@
 // Project module declaration (same as file names)
 mod player;
 mod camera;
+mod animation;
 
 // Includes from project modules
 use player::PlayerPlugin;
 use camera::CameraPlugin;
+use animation::AnimationPlugin;
 
 // External includes
 
@@ -65,6 +67,7 @@ impl Default for CameraRotation
     }
 }
 
+
 // Update order labels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[derive(SystemLabel)]
@@ -72,6 +75,8 @@ enum SystemOrder {
     PlayerMovement,
     CameraMovement,
 }
+
+
 
 // Global constants
 const MARBLE_RADIUS: f32 = 1.;
@@ -94,6 +99,7 @@ fn main() {
         .add_plugin(MaterialPlugin::<MyCustomMaterial>::default())
         .add_plugin(PlayerPlugin)
         .add_plugin(CameraPlugin)
+        .add_plugin(AnimationPlugin)
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_plugin(WorldInspectorPlugin)
         .add_startup_system(setup)

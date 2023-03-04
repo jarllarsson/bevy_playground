@@ -1,17 +1,29 @@
 use bevy::{prelude::*};
 use bevy_prototype_debug_lines::*;
-use crate::{Player, Camera, CameraRotation, Speed, MyCustomMaterial, /*SystemOrder,*/ 
+use std::path::Path;
+use const_format::concatcp;
+use crate::{Player, animation::AnimationLink, Camera, CameraRotation, Speed, MyCustomMaterial, /*SystemOrder,*/ 
 /*GAMEPAD_DEADZONE, GAMEPAD_AXIS_L_SENSITIVITY*/};
+
+const PLAYER_MESH_PATH: &str = "models/Fox.glb";
 
 pub struct PlayerPlugin;
 
+#[derive(Resource)]
+struct PlayerAnimations
+{
+    walk: Handle<AnimationClip>,
+    idle: Handle<AnimationClip>,
+    run:  Handle<AnimationClip>,
+}
+
 impl Plugin for PlayerPlugin{
-    fn build(&self, app: &mut App){
+    fn build(&self, app: &mut App) {
         app.add_startup_stage(
             "setup_player",
             SystemStage::single(player_spawn))
-        /*.add_system(player_movement.label(SystemOrder::PlayerMovement))
-        .add_system(player_animation)*/;
+        /*.add_system(player_movement.label(SystemOrder::PlayerMovement))*/
+        .add_system(player_animation);
     }
 }
 
@@ -24,7 +36,7 @@ fn player_spawn(
     // Make a player sphere
     commands.spawn((
         SceneBundle {
-            scene: asset_server.load("models/Fox.glb#Scene0"),
+            scene: asset_server.load(concatcp!(PLAYER_MESH_PATH, "#Scene0")),
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 0.0),
                 scale: Vec3::new(0.01, 0.01, 0.01),
@@ -35,8 +47,14 @@ fn player_spawn(
         Name::new("Player")
     ))
     // Custom components
-    //.insert(Speed::default())
+    .insert(Speed::default())
     .insert(Player);
+
+    commands.insert_resource(PlayerAnimations {
+        walk: asset_server.load(concatcp!(PLAYER_MESH_PATH, "#Animation2")),
+        idle: asset_server.load(concatcp!(PLAYER_MESH_PATH, "#Animation1")),
+        run:  asset_server.load(concatcp!(PLAYER_MESH_PATH, "#Animation0")),
+    });
 }
 
 /*
@@ -97,16 +115,16 @@ fn player_movement(
     }
     
 }
+*/
 
 fn player_animation(
-    time: Res<Time>,
-    mut materials: ResMut<Assets<MyCustomMaterial>>,
-    mut query: Query<&Handle<MyCustomMaterial>, With<Player>>
+    animations: Res<PlayerAnimations>,
+    mut anim_players_query: Query<&mut AnimationPlayer>,
+    query: Query<(&Speed, &AnimationLink), With<Player>>,
 ){
-    for mat_handle in query.iter_mut() {
-        let time_sine = time.elapsed_seconds() as f32;
-        if let Some(mat) = materials.get_mut(mat_handle) {
-            mat.time = time_sine;
+    for (speed, anim_link) in query.iter() {
+        if let Ok(mut anim) = anim_players_query.get_mut(anim_link.0) {
+            anim.play(animations.idle.clone_weak()).repeat();
         }
     }
-}*/
+}

@@ -9,6 +9,7 @@ edition = "2021" # this needs to be 2021, or you need to set "resolver=2"
 bevy = "0.9.1" # make sure this is the latest version
 rand = "0.8"
 lerp = "0.4"
+const_format = "0.2.30" # enables concatenation of compile time strings
 bevy_prototype_debug_lines = { version = "0.9", features = ["3d"] } # extension for drawing simple debug lines
 bevy-inspector-egui = "0.16"
 
