@@ -3,7 +3,7 @@
 // 1 First get a static mesh working
 // 2 Get skinning and animation working
 // 3 Animation states
-// 4 Animation states with blending
+// 4 Animation states with blending (available in Bevy 0.10...)
 
 
 // Project module declaration (same as file names)

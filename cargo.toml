@@ -12,11 +12,11 @@ lerp = "0.4"
 const_format = "0.2.30" # enables concatenation of compile time strings
 bevy_prototype_debug_lines = { version = "0.9", features = ["3d"] } # extension for drawing simple debug lines
 bevy-inspector-egui = "0.16"
+fast-surface-nets = "0.2.0"
 
 [[example]]
 name = "hello"
 path = "src/hello.rs"
-
 [package.metadata.example.hello]
 name = "Hello"
 description = "Hello World"
@@ -26,7 +26,6 @@ category = "Test"
 [[example]]
 name = "3d_cube"
 path = "src/3d_cube.rs"
-
 [package.metadata.example.3d_cube]
 name = "3d Cube"
 description = "A little 3d cube"
@@ -36,7 +35,6 @@ category = "3d Rendering"
 [[example]]
 name = "3d_cube_glsl"
 path = "src/3d_cube_glsl.rs"
-
 [package.metadata.example.3d_cube_glsl]
 name = "3d Cube with GLSL material"
 description = "A little 3d cube with custom shader in GLSL."
@@ -46,7 +44,6 @@ category = "3d Rendering"
 [[example]]
 name = "compute_wgsl"
 path = "src/compute_wgsl.rs"
-
 [package.metadata.example.compute_wgsl]
 name = "Compute shader WGSL"
 description = "Barebones example of WGSL compute shader in bevy."
@@ -56,17 +53,23 @@ category = "Compute"
 [[example]]
 name = "3d_marble_game_glsl"
 path = "src/3d_marble_game/3d_marble_game_glsl.rs"
-
 [package.metadata.example.3d_marble_game_glsl]
 name = "3d Marble game with GLSL materials"
 description = "Barebones marble game with player input, physics and shaders."
-category = "3d Rendering"
+category = "Game"
 
 [[example]]
-name = "3d_mesh"
-path = "src/3d_mesh/3d_mesh.rs"
+name = "3d_mesh_game"
+path = "src/3d_mesh_game/3d_mesh_game.rs"
+[package.metadata.example.3d_mesh_game]
+name = "3d Mesh Game"
+description = "A test with loading a 3d mesh that can be controlled and animated."
+category = "Game"
 
-[package.metadata.example.3d_mesh]
-name = "3d Mesh"
-description = "A test with loading a 3d mesh"
+[[example]]
+name = "3d_proc_mesh"
+path = "src/3d_proc_mesh/3d_proc_mesh.rs"
+[package.metadata.example.3d_proc_mesh]
+name = "3d Procedural Mesh"
+description = "A mesh created at runtime"
 category = "3d Rendering"
