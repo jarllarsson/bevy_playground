@@ -71,7 +71,7 @@ const MARBLE_RADIUS: f32 = 1.;
 const FLOOR_SIZE: Vec3 = Vec3::new(80., 8., 80.);
 const FLOOR_POSITION: Vec3 = Vec3::new(0., -FLOOR_SIZE.y * 0.5, 0.);
 const GAMEPAD_DEADZONE: f32 = 0.1;
-const GAMEPAD_AXIS_L_SENSITIVITY: f32 = 1.5;
+const GAMEPAD_AXIS_L_SENSITIVITY: f32 = 5.5;
 const GAMEPAD_AXIS_R_SENSITIVITY: f32 = 5.5;
 
 // App entry point
@@ -104,7 +104,7 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    // Light the sphere
+    /*
     commands.spawn(PointLightBundle {
         point_light: PointLight {
             intensity: 1500.0,
@@ -113,7 +113,7 @@ fn setup(
         },
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..default()
-    });
+    });*/
 
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {

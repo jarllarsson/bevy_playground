@@ -6,6 +6,7 @@ use bevy::{
     }
 };
 use crate::{ProcMesh, MyCustomMaterial};
+use bevy_prototype_debug_lines::*;
 use fast_surface_nets::glam::{Vec2, Vec3A};
 use fast_surface_nets::ndshape::{ConstShape, ConstShape3u32};
 use fast_surface_nets::{surface_nets, SurfaceNetsBuffer};
@@ -16,7 +17,8 @@ impl Plugin for ProcMeshPlugin{
     fn build(&self, app: &mut App) {
         app.add_startup_stage(
             "generate_mesh",
-            SystemStage::single(gen_mesh));
+            SystemStage::single(gen_mesh))
+        .add_system(update_mesh);
     }
 }
 
@@ -63,26 +65,69 @@ fn gen_mesh(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<MyCustomMaterial>>,
+    // mut materials: ResMut<Assets<MyCustomMaterial>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let (sphere_buffer, sphere_mesh) = generate_mesh(&mut meshes, |p| sphere_and_cube(0.9, Vec3A::splat(0.7), p));
 
     // Make a procedural mesh
-    commands.spawn(MaterialMeshBundle {
+    commands.spawn(PbrBundle /*MaterialMeshBundle*/ {
         mesh: sphere_mesh,
-        transform: Transform::from_xyz(0.0, 0.5, 0.0).with_scale(Vec3::splat(0.05)),
-        material: materials.add(MyCustomMaterial {
+        transform: Transform::from_xyz(0.0, 0., 0.0).with_scale(Vec3::splat(1.0)),
+        /*material: materials.add(MyCustomMaterial {
             color: Color::GREEN,
             time: 0.0,
             color_texture: Some(asset_server.load("block.png")),
             noise_texture: Some(asset_server.load("manifold_noise.png")),
             alpha_mode: AlphaMode::Opaque,
-        }),
+        }*/
+        material: materials.add( StandardMaterial {
+            base_color:         Color::SEA_GREEN,
+            ..default()
+        }
+        ),
         ..default()
     })
     // Custom components
     .insert(ProcMesh);
 }
+
+fn update_mesh(
+    time: Res<Time>,
+    kb_input: Res<Input<KeyCode>>,
+    mut lines: ResMut<DebugLines>,
+){
+    // TODO Edit mesh here....
+
+    // ...
+
+    // Draw bounds
+    let size = 32.;
+    let bottom_0 = Vec3::splat(0.);
+    let bottom_1 = size * Vec3::new(1., 0., 0.);
+    let bottom_2 = size * Vec3::new(0., 0., 1.);
+    let bottom_3 = size * Vec3::new(1., 0., 1.);
+    let top_0 = size * Vec3::new(0., 1., 0.);
+    let top_1 = size * Vec3::new(1., 1., 0.);
+    let top_2 = size * Vec3::new(0., 1., 1.);
+    let top_3 = size * Vec3::new(1., 1., 1.);
+    // Bottom
+    lines.line_colored(bottom_0, bottom_1, 0., Color::RED);
+    lines.line_colored(bottom_0, bottom_2, 0., Color::RED);
+    lines.line_colored(bottom_1, bottom_3, 0., Color::RED);
+    lines.line_colored(bottom_2, bottom_3, 0., Color::RED);
+    // Top
+    lines.line_colored(top_0, top_1, 0., Color::RED);
+    lines.line_colored(top_0, top_2, 0., Color::RED);
+    lines.line_colored(top_1, top_3, 0., Color::RED);
+    lines.line_colored(top_2, top_3, 0., Color::RED);
+    // Legs
+    lines.line_colored(bottom_0, top_0, 0., Color::RED);
+    lines.line_colored(bottom_1, top_1, 0., Color::RED);
+    lines.line_colored(bottom_2, top_2, 0., Color::RED);
+    lines.line_colored(bottom_3, top_3, 0., Color::RED);
+}
+
 
 fn sphere(radius: f32, p: Vec3A) -> f32 {
     p.length() - radius
