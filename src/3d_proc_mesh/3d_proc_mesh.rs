@@ -22,6 +22,7 @@ use std::{
 
 use bevy::{
     pbr::{MaterialPipeline, MaterialPipelineKey},
+    pbr::wireframe::{WireframePlugin},
     prelude::*,
     reflect::{TypeUuid,        // For material id
         Reflect, TypeRegistry},// For reflecting data to egui
@@ -88,6 +89,7 @@ fn main() {
         .add_plugin(ProcMeshPlugin)
         .add_plugin(CameraPlugin)
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
+        .add_plugin(WireframePlugin)
         .add_plugin(WorldInspectorPlugin)
         .add_startup_system(setup)
         // EGUI Type registry

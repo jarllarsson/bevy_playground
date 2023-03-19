@@ -3,7 +3,8 @@ use bevy::{
     render::{
         mesh::{Indices, VertexAttributeValues},
         render_resource::PrimitiveTopology
-    }
+    },
+    pbr::wireframe::{Wireframe, WireframeConfig},
 };
 use crate::{ProcMesh, MyCustomMaterial};
 use bevy_prototype_debug_lines::*;
@@ -71,7 +72,7 @@ fn gen_mesh(
     let (sphere_buffer, sphere_mesh) = generate_mesh(&mut meshes, |p| sphere_and_cube(0.9, Vec3A::splat(0.7), p));
 
     // Make a procedural mesh
-    commands.spawn(PbrBundle /*MaterialMeshBundle*/ {
+    commands.spawn((PbrBundle /*MaterialMeshBundle*/ {
         mesh: sphere_mesh,
         transform: Transform::from_xyz(0.0, 0., 0.0).with_scale(Vec3::splat(1.0)),
         /*material: materials.add(MyCustomMaterial {
@@ -87,7 +88,8 @@ fn gen_mesh(
         }
         ),
         ..default()
-    })
+    },
+    Wireframe))
     // Custom components
     .insert(ProcMesh);
 }
@@ -96,10 +98,52 @@ fn update_mesh(
     time: Res<Time>,
     kb_input: Res<Input<KeyCode>>,
     mut lines: ResMut<DebugLines>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut query: Query<(&Transform, &mut Handle<Mesh>), With<ProcMesh>>,
 ){
     // TODO Edit mesh here....
 
-    // ...
+    for (transform, mut mesh_handle) in query.iter_mut() {
+        if let Some(mut mesh) = meshes.get_mut(&mesh_handle) {
+
+            let time_sin = time.elapsed_seconds().sin() as f32;
+            let time_cos = time.elapsed_seconds().cos() as f32;
+            let time_sin2 = (time.elapsed_seconds() * 2.).sin() as f32;
+            let time_cos2 = (time.elapsed_seconds() * 2.).cos() as f32;
+            let sp1 = Vec3A::new(time_sin * 0.2, 0., time_cos * 0.2);
+            let sp2 = Vec3A::new(-time_sin * 0.4, time_sin * 0.2, time_cos * 0.3);
+            let sp3 = Vec3A::new(-time_cos2 * 0.3, -time_cos * 0.2, time_sin2 * 0.1);
+
+            let mut samples = [1.0; SampleShape::SIZE as usize];
+            for i in 0u32..(SampleShape::SIZE) {
+                let p = into_domain(32, SampleShape::delinearize(i));
+                samples[i as usize] = sphere(0.25, p + sp1).min(sphere(0.2, p + sp2 + Vec3A::splat(0.2))).min(sphere(0.15, p + sp3)).
+                                      min(sphere(0.3, p + (sp1 + sp2) * 0.5 - Vec3A::splat(0.1))).min(cube(Vec3A::splat(0.3), p - sp2 + Vec3A::splat(0.3))).min(sphere(0.15, p - 2. * sp1 - Vec3A::splat(0.2)));
+            }
+
+            let mut buffer = SurfaceNetsBuffer::default();
+            surface_nets(&samples, &SampleShape {}, [0; 3], [33; 3], &mut buffer);
+
+            // Some triangles were generated.
+            assert!(!buffer.indices.is_empty());
+
+            let num_vertices = buffer.positions.len();
+
+            mesh.insert_attribute(
+                Mesh::ATTRIBUTE_POSITION,
+                VertexAttributeValues::Float32x3(buffer.positions.clone()),
+            );
+            mesh.insert_attribute(
+                Mesh::ATTRIBUTE_NORMAL,
+                VertexAttributeValues::Float32x3(buffer.normals.clone()),
+            );
+            mesh.insert_attribute(
+                Mesh::ATTRIBUTE_UV_0,
+                VertexAttributeValues::Float32x2(vec![[0.0; 2]; num_vertices]),
+            );
+            mesh.set_indices(Some(Indices::U32(buffer.indices.clone())));
+        }
+    }
 
     // Draw bounds
     let size = 32.;
